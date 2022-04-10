@@ -34,8 +34,8 @@ def shutdown_session(response_or_exc):
 def check_sig(payload,sig):
 
     if payload['platform'] == 'Ethereum':
-        eth_msg = eth_account.messages.encode_defunct(text=payload)
-        return eth_account.Account.recover_message(eth_msg, signature=sig) == payload['sender_pk']
+        eth_encoded_msg = eth_account.messages.encode_defunct(text=payload)
+        return eth_account.Account.recover_message(eth_encoded_msg, signature=sig) == payload['sender_pk']
     else:
         return  algosdk.util.verify_bytes(payload.encode('utf-8'), sig, payload['sender_pk'])
 
