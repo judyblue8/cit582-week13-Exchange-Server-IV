@@ -32,13 +32,7 @@ def shutdown_session(response_or_exc):
 """ Suggested helper methods """
 
 def check_sig(payload,sig):
-
-    if payload['platform'] == 'Ethereum':
-        eth_encoded_msg = eth_account.messages.encode_defunct(text=payload)
-        return eth_account.Account.recover_message(eth_encoded_msg, signature=sig) == payload['sender_pk']
-    else:
-        return  algosdk.util.verify_bytes(payload.encode('utf-8'), sig, payload['sender_pk'])
-
+    pass
 
 def fill_order(order,txes=[]):
     pass
@@ -122,7 +116,6 @@ def trade():
 
         signature = content['sig']
         payload = json.dumps(content['payload'])
-        payload_1=content['payload']
         sender_pk = content['payload']['sender_pk']
         receiver_pk = content['payload']['receiver_pk']
         buy_currency = content['payload']['buy_currency']
@@ -131,18 +124,25 @@ def trade():
         sell_amount = content['payload']['sell_amount']
         platform = content['payload']['platform']
         # TODO: Check the signature
-
-
-        if check_sig(payload,signature):
-            #print(check_sig(payload,sender_pk))
-            # TODO: Fill the order
-            process_order(Order(sender_pk=sender_pk, receiver_pk=receiver_pk, buy_currency=buy_currency,sell_currency=sell_currency, buy_amount=buy_amount, sell_amount=sell_amount,
-                                signature=signature))
-            return jsonify(True)
-        else:
-            log_message(content)
-            return jsonify(False)
-
+        if platform == 'Ethereum':
+            eth_encoded_msg = eth_account.messages.encode_defunct(text=payload)
+            if eth_account.Account.recover_message(eth_encoded_msg, signature=signature) == sender_pk:
+                # TODO: Fill the order
+                process_order(Order(sender_pk=sender_pk, receiver_pk=receiver_pk, buy_currency=buy_currency,sell_currency=sell_currency, buy_amount=buy_amount, sell_amount=sell_amount,
+                                    signature=signature))
+                return jsonify(True)
+            else:
+                log_message(content)
+                return jsonify(False)
+        elif platform == 'Algorand':
+            if algosdk.util.verify_bytes(payload.encode('utf-8'), signature, sender_pk):
+                # TODO: Fill the order
+                process_order(Order(sender_pk=sender_pk, receiver_pk=receiver_pk, buy_currency=buy_currency,sell_currency=sell_currency, buy_amount=buy_amount, sell_amount=sell_amount,
+                                    signature=signature))
+                return jsonify(True)
+            else:
+                log_message(content)
+                return jsonify(False)
 
         
 
